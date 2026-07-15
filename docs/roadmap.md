@@ -1,0 +1,14 @@
+- [x] 언어 철학
+- [x] 타입 시스템
+- [x] 문법 설계
+- [ ] EBNF
+- [ ] Token
+- [ ] Lexer
+- [ ] Parser
+- [ ] AST
+- [ ] Interpreter
+- [ ] Type Checker
+- [ ] Bytecode
+- [ ] VM
+- [ ] Optimizer
+- [ ] Debugger

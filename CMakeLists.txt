@@ -21,6 +21,10 @@ add_library(nexus_compiler
     compiler/lexer/KeywordTable.cpp
 
     compiler/parser/Parser.cpp
+    compiler/semantic/SemanticAnalyzer.cpp
+    compiler/ir/IRBuilder.cpp
+    compiler/codegen/CodeGenerator.cpp
+    vm/VirtualMachine.cpp
 
     compiler/unicode/Unicode.cpp
 )
@@ -37,13 +41,29 @@ target_include_directories(nexus_compiler
 # Tests
 # =========================
 
-add_executable(lexer_test
+add_executable(test_lexer
+    tests/lexer/test.cpp
+)
+target_link_libraries(test_lexer
+    PRIVATE
+        nexus_compiler
+)
 
+add_executable(test_parser
     tests/parser/test.cpp
+)
+target_link_libraries(test_parser
+    PRIVATE
+        nexus_compiler
+)
+
+add_executable(NEXUS
+
+    src/main.cpp
 )
 
 
-target_link_libraries(lexer_test
+target_link_libraries(NEXUS
     PRIVATE
         nexus_compiler
 )

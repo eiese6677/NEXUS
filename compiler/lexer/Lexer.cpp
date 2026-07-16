@@ -261,7 +261,7 @@ nexus::token::Token Lexer::NextToken()
         }
 
         return nexus::token::Token{
-            nexus::token::TokenType::Greater,
+            nexus::token::TokenType::Less,
             "<",
             startLine,
             startColumn

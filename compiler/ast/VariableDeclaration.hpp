@@ -38,6 +38,21 @@ public:
 
 
 
+    const std::string& TypeName() const
+    {
+        return typeName;
+    }
+
+    const std::string& Name() const
+    {
+        return name ? name->Name() : typeName;
+    }
+
+    Expression* Value() const
+    {
+        return value.get();
+    }
+
     std::string ToString() const override
     {
         return 

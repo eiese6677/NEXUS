@@ -21,6 +21,11 @@ public:
     {
     }
 
+    Expression* Value() const
+    {
+        return value.get();
+    }
+
     std::string ToString() const override
     {
         return "ReturnStatement";

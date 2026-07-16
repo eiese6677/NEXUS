@@ -34,6 +34,21 @@ public:
     }
 
 
+    const std::string& Operator() const
+    {
+        return op;
+    }
+
+    Expression* Left() const
+    {
+        return left.get();
+    }
+
+    Expression* Right() const
+    {
+        return right.get();
+    }
+
     std::string ToString() const override
     {
         return

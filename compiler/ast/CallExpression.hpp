@@ -27,14 +27,20 @@ public:
     {
     }
 
-
-    void AddArgument(
-        std::unique_ptr<Expression> expr
-    )
+    void AddArgument(std::unique_ptr<Expression> argument)
     {
-        arguments.push_back(std::move(expr));
+        arguments.push_back(std::move(argument));
     }
 
+    const std::string& Name() const
+    {
+        return name;
+    }
+
+    const std::vector<std::unique_ptr<Expression>>& Arguments() const
+    {
+        return arguments;
+    }
 
     std::string ToString() const override
     {

@@ -27,6 +27,16 @@ public:
     {
     }
 
+    Expression* Condition() const
+    {
+        return condition.get();
+    }
+
+    BlockStatement* Body() const
+    {
+        return body.get();
+    }
+
     std::string ToString() const override
     {
         return "WhileStatement";

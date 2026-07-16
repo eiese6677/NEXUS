@@ -27,6 +27,16 @@ public:
     {
     }
 
+    std::string TargetName() const
+    {
+        return target ? target->Name() : "";
+    }
+
+    Expression* Value() const
+    {
+        return value.get();
+    }
+
     std::string ToString() const override
     {
         return "AssignmentStatement";

@@ -24,7 +24,7 @@ public:
     }
 
 
-    const Expression* GetExpression() const
+    Expression* GetExpression() const
     {
         return expression.get();
     }

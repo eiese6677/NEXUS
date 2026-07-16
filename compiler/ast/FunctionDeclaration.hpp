@@ -42,6 +42,26 @@ public:
     {
     }
 
+    const std::string& Name() const
+    {
+        return name;
+    }
+
+    const std::vector<Parameter>& Parameters() const
+    {
+        return parameters;
+    }
+
+    const std::string& ReturnType() const
+    {
+        return returnType;
+    }
+
+    BlockStatement* Body() const
+    {
+        return body.get();
+    }
+
     std::string ToString() const override
     {
         return "FunctionDeclaration";

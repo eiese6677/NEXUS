@@ -64,6 +64,26 @@ public:
     }
 
 
+    Expression* Condition() const
+    {
+        return condition.get();
+    }
+
+    BlockStatement* Body() const
+    {
+        return body.get();
+    }
+
+    const std::vector<ElseIf>& Elifs() const
+    {
+        return elifs;
+    }
+
+    BlockStatement* ElseBody() const
+    {
+        return elseBody.get();
+    }
+
     std::string ToString() const override
     {
         return "IfStatement";

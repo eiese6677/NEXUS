@@ -2,6 +2,10 @@
 #include "KeywordTable.hpp"
 #include "../unicode/Unicode.hpp"
 #include <cctype>
+#include <cstddef>
+
+namespace nexus::lexer
+{
 
 Lexer::Lexer(const std::string& source)
     : source(source),
@@ -129,7 +133,7 @@ void Lexer::skipWhitespace()
     }
 }
 
-Token Lexer::nextToken()
+nexus::token::Token Lexer::NextToken()
 {
     skipWhitespace();
 
@@ -151,45 +155,154 @@ Token Lexer::nextToken()
         return readString();
     }
     
-    Token result{TokenType::Unknown, "",  startLine, startColumn};
+    nexus::token::Token result{nexus::token::TokenType::Unknown, "",  startLine, startColumn};
     switch (currentCodePoint())
     {
     case '+':
-        result = Token{TokenType::Plus,"+", startLine, startColumn};
+        result = nexus::token::Token{nexus::token::TokenType::Plus,"+", startLine, startColumn};
         advanceCodePoint();
         break;
     case '-':
-        result = Token{TokenType::Minus,"-", startLine, startColumn};
+        result = nexus::token::Token{nexus::token::TokenType::Minus,"-", startLine, startColumn};
         advanceCodePoint();
         break;
     case '=':
-        result = Token{TokenType::Assign,"=", startLine, startColumn};
         advanceCodePoint();
-        break;
+
+        if (currentCodePoint() == U'=')
+        {
+            advanceCodePoint();
+
+            return nexus::token::Token{
+                nexus::token::TokenType::Equal,
+                "==",
+                startLine,
+                startColumn
+            };
+        }
+
+        return nexus::token::Token{
+            nexus::token::TokenType::Assign,
+            "=",
+            startLine,
+            startColumn
+        };
     case '(':
-        result = Token{TokenType::LeftParen,"(", startLine, startColumn};
+        result = nexus::token::Token{nexus::token::TokenType::LeftParen,"(", startLine, startColumn};
         advanceCodePoint();
         break;
     case ')':
-        result = Token{TokenType::RightParen,")", startLine, startColumn};
+        result = nexus::token::Token{nexus::token::TokenType::RightParen,")", startLine, startColumn};
         advanceCodePoint();
         break;
     case '{':
-        result = Token{TokenType::LeftBrace,"{", startLine, startColumn};
+        result = nexus::token::Token{nexus::token::TokenType::LeftBrace,"{", startLine, startColumn};
         advanceCodePoint();
         break;
     case '}':
-        result = Token{TokenType::RightBrace,"}", startLine, startColumn};
+        result = nexus::token::Token{nexus::token::TokenType::RightBrace,"}", startLine, startColumn};
+        advanceCodePoint();
+        break;
+    case '!':
+        advanceCodePoint();
+
+        if (currentCodePoint() == U'=')
+        {
+            advanceCodePoint();
+
+            return nexus::token::Token{
+                nexus::token::TokenType::NotEqual,
+                "!=",
+                startLine,
+                startColumn
+            };
+        }
+
+        return nexus::token::Token{
+            nexus::token::TokenType::Not,
+            "!",
+            startLine,
+            startColumn
+        };
+    case '>':
+        advanceCodePoint();
+
+        if(currentCodePoint() == U'=')
+        {
+            advanceCodePoint();
+
+            return nexus::token::Token{
+                nexus::token::TokenType::GreaterEqual,
+                ">=",
+                startLine,
+                startColumn
+            };
+        }
+
+        return nexus::token::Token{
+            nexus::token::TokenType::Greater,
+            ">",
+            startLine,
+            startColumn
+        };
+    case '<':
+        advanceCodePoint();
+
+        if(currentCodePoint() == U'=')
+        {
+            advanceCodePoint();
+
+            return nexus::token::Token{
+                nexus::token::TokenType::LessEqual,
+                "<=",
+                startLine,
+                startColumn
+            };
+        }
+
+        return nexus::token::Token{
+            nexus::token::TokenType::Greater,
+            "<",
+            startLine,
+            startColumn
+        };
+
+    case '*':
+        result = nexus::token::Token{
+            nexus::token::TokenType::Multiply,
+            "*",
+            startLine,
+            startColumn
+        };
+        advanceCodePoint();
+        break;
+
+    case '/':
+        result = nexus::token::Token{
+            nexus::token::TokenType::Divide,
+            "/",
+            startLine,
+            startColumn
+        };
         advanceCodePoint();
         break;
     case '\0':
-        result = Token{TokenType::EndOfFile,"", startLine, startColumn};
+        result = nexus::token::Token{nexus::token::TokenType::EndOfFile,"", startLine, startColumn};
+        break;
+    default:
+        result = nexus::token::Token{
+            nexus::token::TokenType::Unknown,
+            Unicode::encodeUTF8(currentCodePoint()),
+            startLine,
+            startColumn
+        };
+        advanceCodePoint();
         break;
     }
     return result;
 }
 
-Token Lexer::readIdentifier()
+nexus::token::Token Lexer::readIdentifier()
 {
     int startLine = line;
     int startColumn = column;
@@ -202,7 +315,7 @@ Token Lexer::readIdentifier()
         advanceCodePoint();
     }
 
-    return Token{
+    return nexus::token::Token{
         KeywordTable::find(word),
         word,
         startLine,
@@ -210,30 +323,54 @@ Token Lexer::readIdentifier()
     };
 }
 
-Token Lexer::readNumber()
+nexus::token::Token Lexer::readNumber()
 {
     int startLine = line;
     int startColumn = column;
 
     std::string number;
 
+    bool isFloat = false;
 
-    while (isDigit(currentCodePoint()))
+
+    while (true)
     {
-        number += Unicode::encodeUTF8(currentCodePoint());
-        advanceCodePoint();
+        char32_t ch = currentCodePoint();
+
+
+        if (isDigit(ch))
+        {
+            number += Unicode::encodeUTF8(ch);
+            advanceCodePoint();
+        }
+        else if (ch == U'.' && !isFloat)
+        {
+            // 소수점
+            isFloat = true;
+
+            number += '.';
+            advanceCodePoint();
+        }
+        else
+        {
+            break;
+        }
     }
 
 
-    return Token{
-        TokenType::IntegerLiteral,
+    return nexus::token::Token{
+        isFloat
+            ? nexus::token::TokenType::FloatLiteral
+            : nexus::token::TokenType::IntegerLiteral,
+
         number,
+
         startLine,
         startColumn
     };
 }
 
-Token Lexer::readString()
+nexus::token::Token Lexer::readString()
 {
     int startLine = line;
     int startColumn = column;
@@ -254,10 +391,12 @@ Token Lexer::readString()
         advanceCodePoint();
     }
 
-    return Token{
-        TokenType::StringLiteral,
+    return nexus::token::Token{
+        nexus::token::TokenType::StringLiteral,
         word,
         startLine,
         startColumn
     };
+}
+
 }

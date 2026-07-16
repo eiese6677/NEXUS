@@ -1,5 +1,8 @@
 #pragma once
 
+namespace nexus::token
+{
+
 enum class TokenType
 {
     Identifier,
@@ -17,7 +20,10 @@ enum class TokenType
 
     If,
     Else,
+    Elif,
     While,
+    Break,
+    Continue,
 
     Print,
 
@@ -44,6 +50,7 @@ enum class TokenType
     Less,
     GreaterEqual,
     LessEqual,
+    Not,
 
 
     // 기호
@@ -59,3 +66,5 @@ enum class TokenType
     Unknown,
     EndOfFile
 };
+
+}

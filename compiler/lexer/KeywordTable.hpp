@@ -5,32 +5,39 @@
 #include <string>
 #include <unordered_map>
 
+namespace nexus::lexer
+{
 
 class KeywordTable
 {
 public:
-    static TokenType find(const std::string& word)
-    {
-        auto it = keywords.find(word);
 
-        if (it != keywords.end())
-            return it->second;
-
-        return TokenType::Identifier;
-    }
+    static nexus::token::TokenType find(const std::string& word);
 
 
 private:
-    inline static const std::unordered_map<std::string, TokenType> keywords =
+
+    inline static const std::unordered_map<std::string, nexus::token::TokenType> keywords =
     {
-        {"let", TokenType::Let},
-        {"const", TokenType::Const},
+        {"let", nexus::token::TokenType::Let},
+        {"const", nexus::token::TokenType::Const},
 
-        {"출력", TokenType::Print},
+        {"함수", nexus::token::TokenType::Function},
+        {"반환", nexus::token::TokenType::Return},
 
-        {"정수", TokenType::TypeInteger},
-        {"실수", TokenType::TypeFloat},
-        {"문자열", TokenType::TypeString},
-        {"불린", TokenType::TypeBoolean}
+        {"만약", nexus::token::TokenType::If},
+        {"아니면", nexus::token::TokenType::Else},
+        {"그렇지않으면", nexus::token::TokenType::Elif},
+        {"동안", nexus::token::TokenType::While},
+
+        {"출력", nexus::token::TokenType::Print},
+
+        {"정수", nexus::token::TokenType::TypeInteger},
+        {"실수", nexus::token::TokenType::TypeFloat},
+        {"문자열", nexus::token::TokenType::TypeString},
+        {"불린", nexus::token::TokenType::TypeBoolean}
     };
+
 };
+
+}

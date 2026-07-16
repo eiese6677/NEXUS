@@ -8,21 +8,42 @@ project(NEXUS
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 
-add_executable(NEXUS
+# =========================
+# NEXUS Compiler Library
+# =========================
 
-    src/main.cpp
+add_library(nexus_compiler
 
     compiler/lexer/Lexer.cpp
-    compiler/lexer/Token.cpp
+    compiler/lexer/KeywordTable.cpp
+
+    compiler/parser/Parser.cpp
 
     compiler/unicode/Unicode.cpp
 )
 
 
-target_include_directories(NEXUS PRIVATE
+target_include_directories(nexus_compiler
+    PUBLIC
+        ${PROJECT_SOURCE_DIR}/compiler
+)
 
-    compiler/lexer
-    compiler/unicode
+
+
+# =========================
+# Tests
+# =========================
+
+add_executable(lexer_test
+
+    tests/parser/test.cpp
+)
+
+
+target_link_libraries(lexer_test
+    PRIVATE
+        nexus_compiler
 )

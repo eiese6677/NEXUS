@@ -1,27 +1,11 @@
-#include "../compiler/lexer/Lexer.hpp"
 #include <iostream>
-
+#include "ast/literal.hpp"
 
 int main()
 {
-    std::string code = R"(
-        let 이름: 정수 = 123
-        출력("Hello")
-    )";
+    nexus::ast::NumberLiteral node(123);
 
+    std::cout << node.ToString();
 
-    Lexer lexer(code);
-
-    while(true)
-    {
-        Token token = lexer.nextToken();
-
-        std::cout
-            << token.value
-            << "\n";
-
-
-        if(token.type == TokenType::EndOfFile)
-            break;
-    }
+    return 0;
 }

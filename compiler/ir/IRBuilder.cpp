@@ -201,23 +201,31 @@ void IRBuilder::GenerateExpression(nexus::ast::Expression* expression)
         std::string op = binary->Operator();
         if (op == "+")
         {
-            module.Add({nexus::ir::Opcode::Add, ""});
+            module.Add({
+                nexus::ir::Opcode::Add,
+                std::monostate{}
+            });
         }
         else if (op == "-")
         {
-            module.Add({nexus::ir::Opcode::Subtract, ""});
+            module.Add({
+                nexus::ir::Opcode::Subtract,
+                std::monostate{}
+            });
         }
         else if (op == "*")
         {
-            module.Add({nexus::ir::Opcode::Multiply, ""});
+            module.Add({
+                nexus::ir::Opcode::Multiply,
+                std::monostate{}
+            });
         }
         else if (op == "/")
         {
-            module.Add({nexus::ir::Opcode::Divide, ""});
-        }
-        else if (op == "<" || op == ">" || op == "<=" || op == ">=" || op == "==" || op == "!=")
-        {
-            module.Add({nexus::ir::Opcode::Compare, op});
+            module.Add({
+                nexus::ir::Opcode::Divide,
+                std::monostate{}
+            });
         }
 
         return;

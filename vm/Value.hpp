@@ -2,8 +2,7 @@
 
 #include <variant>
 #include <string>
-#include <iostream>
-#include <type_traits>
+#include <cstdint>
 
 namespace nexus::vm
 {
@@ -15,26 +14,14 @@ using Value = std::variant<
     bool
 >;
 
-inline std::ostream& operator<<(std::ostream& os, const Value& value)
-{
-    std::visit(
-        [&](auto&& v)
-        {
-            using T = std::decay_t<decltype(v)>;
 
-            if constexpr (std::is_same_v<T, bool>)
-            {
-                os << (v ? "true" : "false");
-            }
-            else
-            {
-                os << v;
-            }
-        },
-        value
-    );
+Value Add(const Value& a, const Value& b);
+Value Subtract(const Value& a, const Value& b);
+Value Multiply(const Value& a, const Value& b);
+Value Divide(const Value& a, const Value& b);
 
-    return os;
-}
+bool CompareEqual(const Value& a, const Value& b);
+
+std::string ToString(const Value& value);
 
 }

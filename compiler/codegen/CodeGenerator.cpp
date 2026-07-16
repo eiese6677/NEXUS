@@ -1,9 +1,11 @@
 #include "CodeGenerator.hpp"
 #include "../ir/Opcode.hpp"
 #include "../vm/Opcode.hpp"
+
 #include <string>
 #include <variant>
 #include <type_traits>
+#include <stdexcept>
 
 namespace nexus::codegen
 {
@@ -16,7 +18,13 @@ nexus::vm::Bytecode CodeGenerator::Generate(const nexus::ir::IRModule& module)
     {
         if (instruction.opcode == nexus::ir::Opcode::Label)
         {
-            const auto& label = std::get<std::string>(instruction.operand);
+            if (!std::holds_alternative<std::string>(instruction.operand))
+            {
+                throw std::runtime_error("Expected string operand");
+            }
+
+            const auto& label =
+                std::get<std::string>(instruction.operand);
 
             labelOffsets[label] = vmIndex;
         }
@@ -79,7 +87,13 @@ void CodeGenerator::GenerateInstruction(const nexus::ir::Instruction& instructio
 
     case nexus::ir::Opcode::Jump:
     {
-        const auto& label = std::get<std::string>(instruction.operand);
+        if (!std::holds_alternative<std::string>(instruction.operand))
+        {
+            throw std::runtime_error("Expected string operand");
+        }
+
+        const auto& label =
+            std::get<std::string>(instruction.operand);
         bytecode.Add({
             nexus::vm::Opcode::JMP,
             static_cast<int64_t>(labelOffsets[label])
@@ -88,7 +102,13 @@ void CodeGenerator::GenerateInstruction(const nexus::ir::Instruction& instructio
     }
     case nexus::ir::Opcode::JumpIfFalse:
     {
-        const auto& label = std::get<std::string>(instruction.operand);
+        if (!std::holds_alternative<std::string>(instruction.operand))
+        {
+            throw std::runtime_error("Expected string operand");
+        }
+
+        const auto& label =
+            std::get<std::string>(instruction.operand);
         bytecode.Add({
             nexus::vm::Opcode::JMP_IF_FALSE,
             static_cast<int64_t>(labelOffsets[label])
@@ -97,6 +117,11 @@ void CodeGenerator::GenerateInstruction(const nexus::ir::Instruction& instructio
     }
     case nexus::ir::Opcode::Compare:
     {
+        if (!std::holds_alternative<std::string>(instruction.operand))
+        {
+            throw std::runtime_error("Expected string operand");
+        }
+
         const auto& op =
             std::get<std::string>(instruction.operand);
 
@@ -117,23 +142,24 @@ void CodeGenerator::GenerateInstruction(const nexus::ir::Instruction& instructio
 }
 
 nexus::vm::Value CodeGenerator::ConvertValue(
-    const nexus::ir::Constant& constant)
+    const nexus::ir::Constant& value
+)
 {
     return std::visit(
-        [](auto&& value) -> nexus::vm::Value
+        [](auto&& v) -> nexus::vm::Value
         {
-            using T = std::decay_t<decltype(value)>;
+            using T = std::decay_t<decltype(v)>;
 
             if constexpr (std::is_same_v<T, std::monostate>)
             {
-                return std::string("");
+                return int64_t(0);
             }
             else
             {
-                return value;
+                return v;
             }
         },
-        constant
+        value
     );
 }
 

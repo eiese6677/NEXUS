@@ -18,7 +18,20 @@ void PrintValue_vm(const nexus::vm::Value& value)
     std::visit(
         [](auto&& v)
         {
-            std::cout << v;
+            using T = std::decay_t<decltype(v)>;
+
+            if constexpr (std::is_same_v<T, std::monostate>)
+            {
+                std::cout << "<none>";
+            }
+            else if constexpr (std::is_same_v<T, bool>)
+            {
+                std::cout << (v ? "true" : "false");
+            }
+            else
+            {
+                std::cout << v;
+            }
         },
         value
     );

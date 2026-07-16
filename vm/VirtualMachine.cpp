@@ -36,6 +36,18 @@ void VirtualMachine::Execute(const Bytecode& bytecode)
             stack.push_back(instruction.operand);
             break;
 
+        // case Opcode::PUSH:
+        // {
+        //     std::cout << "PUSH\n";
+
+        //     std::visit([](auto&& v){
+        //         std::cout << typeid(v).name() << "\n";
+        //     }, instruction.operand);
+
+        //     stack.push_back(instruction.operand);
+        //     break;
+        // }
+
         case nexus::vm::Opcode::LOAD:
         {
             if (!variables.contains(std::get<std::string>(instruction.operand)))
@@ -53,51 +65,63 @@ void VirtualMachine::Execute(const Bytecode& bytecode)
             break;
         }
 
-        case nexus::vm::Opcode::ADD:
+        case Opcode::ADD:
         {
-            if (stack.size() < 2)
-                throw std::runtime_error("stack underflow on ADD");
-            const double b = std::get<double>(stack.back());
+            auto b = stack.back();
             stack.pop_back();
-            const double a = std::get<double>(stack.back());
+
+            auto a = stack.back();
             stack.pop_back();
-            stack.push_back(a + b);
+
+            stack.push_back(
+                Add(a,b)
+            );
+
             break;
         }
-
-        case nexus::vm::Opcode::SUB:
+        
+        case Opcode::SUB:
         {
-            if (stack.size() < 2)
-                throw std::runtime_error("stack underflow on SUB");
-            const double b = std::get<double>(stack.back());
+            auto b = stack.back();
             stack.pop_back();
-            const double a = std::get<double>(stack.back());
+
+            auto a = stack.back();
             stack.pop_back();
-            stack.push_back(a - b);
+
+            stack.push_back(
+                Subtract(a,b)
+            );
+
             break;
         }
 
         case nexus::vm::Opcode::MUL:
         {
-            if (stack.size() < 2)
-                throw std::runtime_error("stack underflow on MUL");
-            const double b = std::get<double>(stack.back());
+            auto b = stack.back();
             stack.pop_back();
-            const double a = std::get<double>(stack.back());
+
+            auto a = stack.back();
             stack.pop_back();
-            stack.push_back(a * b);
+
+            stack.push_back(
+                Multiply(a,b)
+            );
+
             break;
         }
 
         case nexus::vm::Opcode::DIV:
         {
-            if (stack.size() < 2)
-                throw std::runtime_error("stack underflow on DIV");
-            const double b = std::get<double>(stack.back());
+            auto b = stack.back();
             stack.pop_back();
-            const double a = std::get<double>(stack.back());
+
+            auto a = stack.back();
             stack.pop_back();
-            stack.push_back(a / b);
+
+            stack.push_back(
+                Divide(a,b)
+            );
+
             break;
         }
 

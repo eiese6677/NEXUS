@@ -25,7 +25,8 @@ add_library(nexus_compiler
     compiler/ir/IRBuilder.cpp
     compiler/codegen/CodeGenerator.cpp
     vm/VirtualMachine.cpp
-
+    vm/Value.cpp
+    
     compiler/unicode/Unicode.cpp
 )
 

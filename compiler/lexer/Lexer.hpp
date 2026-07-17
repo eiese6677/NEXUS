@@ -13,7 +13,7 @@ public:
     Lexer(const std::string& source);
     nexus::token::Token NextToken();
     
-    private:
+private:
     std::string source;
     size_t position;
     int line;

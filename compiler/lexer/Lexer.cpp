@@ -137,11 +137,32 @@ nexus::token::Token Lexer::NextToken()
 {
     skipWhitespace();
 
+    // 한 줄 주석 처리
+    if (currentCodePoint() == U'/')
+    {
+        size_t savedPosition = position;
+
+        advanceCodePoint();
+
+        if (currentCodePoint() == U'/')
+        {
+            while (currentCodePoint() != U'\n' &&
+                   currentCodePoint() != U'\0')
+            {
+                advanceCodePoint();
+            }
+
+            return NextToken();
+        }
+
+        // 주석이 아니면 원상복구
+        position = savedPosition;
+    }
+
     int startLine = line;
     int startColumn = column;
 
-    if (isIdentifierStart(currentCodePoint()))
-    {
+    if (isIdentifierStart(currentCodePoint()))    {
         return readIdentifier();
     }
     
@@ -154,7 +175,7 @@ nexus::token::Token Lexer::NextToken()
     {
         return readString();
     }
-    
+
     nexus::token::Token result{nexus::token::TokenType::Unknown, "",  startLine, startColumn};
     switch (currentCodePoint())
     {
@@ -276,7 +297,7 @@ nexus::token::Token Lexer::NextToken()
         };
         advanceCodePoint();
         break;
-
+        
     case '/':
         result = nexus::token::Token{
             nexus::token::TokenType::Divide,

@@ -115,31 +115,31 @@ int main(int argc, char* argv[])
     auto module = builder.Build(*program);
     
     // 디버그 출력
-    for (auto& stmt : program->Statements())
-    {
-        if (stmt)
-            std::cout << typeid(*stmt).name() << "\n";
-        else
-            std::cout << "nullptr\n";
-    }
+    // for (auto& stmt : program->Statements())
+    // {
+    //     if (stmt)
+    //         std::cout << typeid(*stmt).name() << "\n";
+    //     else
+    //         std::cout << "nullptr\n";
+    // }
 
-    for (const auto& instruction : module.Instructions()) {
-        std::cout << "IR [" 
-                << static_cast<int>(instruction.opcode)
-                << "] ";
-        PrintValue_ir(instruction.operand);
-        std::cout << "\n";
-    }
-    for (const auto& inst : bytecode.Code())
-    {
-        std::cout
-            << nexus::vm::OpcodeToString(inst.opcode)
-            << "\t";
+    // for (const auto& instruction : module.Instructions()) {
+    //     std::cout << "IR [" 
+    //             << static_cast<int>(instruction.opcode)
+    //             << "] ";
+    //     PrintValue_ir(instruction.operand);
+    //     std::cout << "\n";
+    // }
+    // for (const auto& inst : bytecode.Code())
+    // {
+    //     std::cout
+    //         << nexus::vm::OpcodeToString(inst.opcode)
+    //         << "\t";
 
-        PrintValue_vm(inst.operand);
+    //     PrintValue_vm(inst.operand);
 
-        std::cout << "\n";
-    }
+    //     std::cout << "\n";
+    // }
 
     // Execute
     nexus::vm::VirtualMachine vm;

@@ -11,72 +11,46 @@
 namespace nexus::codegen
 {
 
-// nexus::vm::Bytecode CodeGenerator::Generate(const nexus::ir::IRModule& module)
-// {
-//     labelOffsets.clear();
-//     size_t vmIndex = 0;
-//     for (const auto& instruction : module.Instructions())
-//     {
-//         if (instruction.opcode == nexus::ir::Opcode::Label)
-//         {
-//             if (!std::holds_alternative<std::string>(instruction.operand))
-//             {
-//                 throw std::runtime_error("Expected string operand");
-//             }
+void CodeGenerator::ResolveLabels(
+    const nexus::ir::IRModule& module
+)
+{
+    labelOffsets.clear();
 
-//             const auto& label =
-//                 std::get<std::string>(instruction.operand);
+    size_t offset = 0;
 
-//             labelOffsets[label] = vmIndex;
-//         }
-//         else
-//         {
-//             vmIndex++;
-//         }
-//     }
+    for(const auto& instruction : module.Instructions())
+    {
+        if(instruction.opcode == nexus::ir::Opcode::Label)
+        {
+            const auto& label =
+                std::get<std::string>(instruction.operand);
 
-//     bytecode = nexus::vm::Bytecode();
+            labelOffsets[label] = offset;
+        }
+        else if(instruction.opcode != nexus::ir::Opcode::Function)
+        {
+            offset++;
+        }
+    }
+}
 
-//         for (const auto& instruction : module.Instructions())
-//     {
-//         GenerateInstruction(instruction);
-//     }
-
-//     for (auto& inst : mainCode)
-//     {
-//         bytecode.Add(inst);
-//     }
-
-//     size_t offset = bytecode.Code().size();
-
-//     bytecode.OffsetFunctions(offset);
-
-//     for(auto& inst : functionCode)
-//     {
-//         bytecode.Add(inst);
-//     }
-
-//     std::cout << "functionAddresses size: "
-//           << functionAddresses.size()
-//           << "\n";
-
-//     return bytecode;
-// }
 nexus::vm::Bytecode CodeGenerator::Generate(
     const nexus::ir::IRModule& module
 )
 {
+    ResolveLabels(module);
+
     for(const auto& instruction : module.Instructions())
     {
         GenerateInstruction(instruction);
     }
-    
+
     mainCode.push_back({
         vm::Opcode::HALT,
         {}
     });
 
-    // main 코드 먼저 추가
     for(const auto& inst : mainCode)
     {
         bytecode.Add(inst);
@@ -86,8 +60,7 @@ nexus::vm::Bytecode CodeGenerator::Generate(
     size_t functionOffset =
         bytecode.Code().size();
 
-    // 함수 주소 등록
-    for(const auto& [name, address] : functionAddresses)
+    for(const auto& [name,address] : functionAddresses)
     {
         bytecode.AddFunction(
             name,
@@ -95,7 +68,7 @@ nexus::vm::Bytecode CodeGenerator::Generate(
         );
     }
 
-    // 함수 코드 추가
+
     for(const auto& inst : functionCode)
     {
         bytecode.Add(inst);
@@ -108,6 +81,10 @@ void CodeGenerator::GenerateInstruction(const nexus::ir::Instruction& instructio
 {
     switch (instruction.opcode)
     {
+    case nexus::ir::Opcode::Label:
+        {
+            break;
+        }
     case nexus::ir::Opcode::LoadConstant:
         if (inFunction)
         {
@@ -128,7 +105,7 @@ void CodeGenerator::GenerateInstruction(const nexus::ir::Instruction& instructio
         {
             mainCode.push_back({nexus::vm::Opcode::STORE, ConvertValue(instruction.operand)});
         }
-
+        break;
     case nexus::ir::Opcode::LoadVariable:
         if(inFunction)
         {

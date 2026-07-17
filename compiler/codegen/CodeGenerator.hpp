@@ -26,7 +26,7 @@ public:
 
 private:
     void GenerateInstruction(const nexus::ir::Instruction& instruction);
-    
+    void ResolveLabels(const nexus::ir::IRModule& module);
     nexus::vm::Value ConvertValue(const nexus::ir::Constant& constant);
     std::unordered_map<std::string, size_t> functionAddresses;
 };

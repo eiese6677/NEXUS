@@ -286,6 +286,14 @@ nexus::token::Token Lexer::NextToken()
         };
         advanceCodePoint();
         break;
+    case ':':
+        {
+            advanceCodePoint();
+            return nexus::token::Token(
+                nexus::token::TokenType::Colon,
+                ":"
+            );
+        }
     case '\0':
         result = nexus::token::Token{nexus::token::TokenType::EndOfFile,"", startLine, startColumn};
         break;
@@ -313,6 +321,22 @@ nexus::token::Token Lexer::readIdentifier()
     {
         word += Unicode::encodeUTF8(currentCodePoint());
         advanceCodePoint();
+    }
+    
+    if(word == "참")
+    {
+        return nexus::token::Token{
+            nexus::token::TokenType::BooleanLiteral,
+            word
+        };
+    }
+
+    if(word == "거짓")
+    {
+        return nexus::token::Token{
+            nexus::token::TokenType::BooleanLiteral,
+            word
+        };
     }
 
     return nexus::token::Token{

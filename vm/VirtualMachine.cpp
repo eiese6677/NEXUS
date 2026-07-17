@@ -8,14 +8,18 @@
 #include <stdexcept>
 #include <string>
 
-using Operand = std::variant<
-    std::monostate,
-    int64_t,
-    double,
-    std::string,
-    bool
->;
-using Value = Operand;
+double ToNumber(const nexus::vm::Value& v)
+{
+    if (std::holds_alternative<int64_t>(v))
+        return static_cast<double>(
+            std::get<int64_t>(v)
+        );
+
+    if (std::holds_alternative<double>(v))
+        return std::get<double>(v);
+
+    throw std::runtime_error("not a number");
+}
 
 namespace nexus::vm
 {
@@ -28,25 +32,19 @@ void VirtualMachine::Execute(const Bytecode& bytecode)
     while (pc < code.size())
     {
         const auto& instruction = code[pc];
-        pc++;
+        
+        // std::cout
+        //     << "PC="
+        //     << pc
+        //     << " OPCODE="
+        //     << static_cast<int>(instruction.opcode)
+        //     << "\n";
 
         switch (instruction.opcode)
         {
         case nexus::vm::Opcode::PUSH:
             stack.push_back(instruction.operand);
             break;
-
-        // case Opcode::PUSH:
-        // {
-        //     std::cout << "PUSH\n";
-
-        //     std::visit([](auto&& v){
-        //         std::cout << typeid(v).name() << "\n";
-        //     }, instruction.operand);
-
-        //     stack.push_back(instruction.operand);
-        //     break;
-        // }
 
         case nexus::vm::Opcode::LOAD:
         {
@@ -156,96 +154,138 @@ void VirtualMachine::Execute(const Bytecode& bytecode)
 
         case nexus::vm::Opcode::JMP:
             pc = static_cast<size_t>(std::get<int64_t>(instruction.operand));
-            break;
+            continue;
 
-        case nexus::vm::Opcode::JMP_IF_FALSE:
+        case Opcode::JMP_IF_FALSE:
         {
-            if (stack.empty())
+            if(stack.empty())
                 throw std::runtime_error("stack underflow on JMP_IF_FALSE");
-            const double val = std::get<double>(stack.back());
+
+            Value cond = stack.back();
             stack.pop_back();
-            if (val == 0.0)
+
+            bool result = false;
+
+            if(std::holds_alternative<bool>(cond))
             {
-                pc = static_cast<size_t>(std::get<int64_t>(instruction.operand));
+                result = std::get<bool>(cond);
             }
+            else if(std::holds_alternative<int64_t>(cond))
+            {
+                result = std::get<int64_t>(cond) != 0;
+            }
+            else
+            {
+                throw std::runtime_error(
+                    "invalid condition type"
+                );
+            }
+
+            if(!result)
+            {
+                pc = static_cast<size_t>(
+                    std::get<int64_t>(instruction.operand)
+                );
+                continue;
+            }
+
             break;
         }
 
-        case nexus::vm::Opcode::LT:
+        case Opcode::LT:
         {
-            if (stack.size() < 2)
-                throw std::runtime_error("stack underflow on LT");
-            const double b = std::get<double>(stack.back());
+            auto b = stack.back();
             stack.pop_back();
-            const double a = std::get<double>(stack.back());
+
+            auto a = stack.back();
             stack.pop_back();
-            stack.push_back(a < b ? 1.0 : 0.0);
+
+            stack.push_back(
+                ToNumber(a) < ToNumber(b)
+            );
+
             break;
         }
-
         case nexus::vm::Opcode::GT:
         {
-            if (stack.size() < 2)
-                throw std::runtime_error("stack underflow on GT");
-            const double b = std::get<double>(stack.back());
+            auto b = stack.back();
             stack.pop_back();
-            const double a = std::get<double>(stack.back());
+
+            auto a = stack.back();
             stack.pop_back();
-            stack.push_back(a > b ? 1.0 : 0.0);
+
+            stack.push_back(
+                ToNumber(a) > ToNumber(b)
+            );
+
             break;
         }
 
         case nexus::vm::Opcode::LE:
         {
-            if (stack.size() < 2)
-                throw std::runtime_error("stack underflow on LE");
-            const double b = std::get<double>(stack.back());
+            auto b = stack.back();
             stack.pop_back();
-            const double a = std::get<double>(stack.back());
+
+            auto a = stack.back();
             stack.pop_back();
-            stack.push_back(a <= b ? 1.0 : 0.0);
+
+            stack.push_back(
+                ToNumber(a) <= ToNumber(b)
+            );
+
             break;
         }
 
         case nexus::vm::Opcode::GE:
         {
-            if (stack.size() < 2)
-                throw std::runtime_error("stack underflow on GE");
-            const double b = std::get<double>(stack.back());
+            auto b = stack.back();
             stack.pop_back();
-            const double a = std::get<double>(stack.back());
+
+            auto a = stack.back();
             stack.pop_back();
-            stack.push_back(a >= b ? 1.0 : 0.0);
+
+            stack.push_back(
+                ToNumber(a) <= ToNumber(b)
+            );
+
             break;
         }
 
         case nexus::vm::Opcode::EQ:
         {
-            if (stack.size() < 2)
-                throw std::runtime_error("stack underflow on EQ");
-            const double b = std::get<double>(stack.back());
+            auto b = stack.back();
             stack.pop_back();
-            const double a = std::get<double>(stack.back());
+
+            auto a = stack.back();
             stack.pop_back();
-            stack.push_back(a == b ? 1.0 : 0.0);
+
+            stack.push_back(
+                ToNumber(a) == ToNumber(b)
+            );
+
             break;
         }
 
         case nexus::vm::Opcode::NE:
         {
-            if (stack.size() < 2)
-                throw std::runtime_error("stack underflow on NE");
-            const double b = std::get<double>(stack.back());
+            auto b = stack.back();
             stack.pop_back();
-            const double a = std::get<double>(stack.back());
+
+            auto a = stack.back();
             stack.pop_back();
-            stack.push_back(a != b ? 1.0 : 0.0);
+
+            stack.push_back(
+                ToNumber(a) != ToNumber(b)
+            );
+
             break;
         }
 
         case nexus::vm::Opcode::HALT:
             return;
         }
+
+        pc++;
     }
 }
 

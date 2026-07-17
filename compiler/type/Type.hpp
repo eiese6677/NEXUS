@@ -3,23 +3,14 @@
 namespace nexus::type
 {
 
-enum class TypeKind
+enum class Type
 {
-    Int,
+    Integer,
     Float,
     String,
-    Bool,
+    Boolean,
+    Void,
     Unknown
-};
-
-struct Type
-{
-    TypeKind kind;
-
-    bool operator==(const Type& other) const
-    {
-        return kind == other.kind;
-    }
 };
 
 }

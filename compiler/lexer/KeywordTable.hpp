@@ -35,7 +35,7 @@ private:
         {"정수", nexus::token::TokenType::TypeInteger},
         {"실수", nexus::token::TokenType::TypeFloat},
         {"문자열", nexus::token::TokenType::TypeString},
-        {"불린", nexus::token::TokenType::TypeBoolean}
+        {"불린", nexus::token::TokenType::TypeBoolean},
     };
 
 };

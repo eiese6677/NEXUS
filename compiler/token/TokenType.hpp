@@ -10,7 +10,7 @@ enum class TokenType
     IntegerLiteral,
     FloatLiteral,
     StringLiteral,
-
+    BooleanLiteral,
 
     // 키워드
     Let,

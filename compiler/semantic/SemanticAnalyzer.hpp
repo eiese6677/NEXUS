@@ -52,6 +52,7 @@ private:
     Type AnalyzeIdentifier(nexus::ast::Identifier* expr);
     Type AnalyzeCallExpression(nexus::ast::CallExpression* expr);
     Type AnalyzeLiteral(nexus::ast::Expression* expr);
+    Type InferExpressionType(ast::Expression* expr);
     void AddDiagnostic(const std::string& message);
 };
 

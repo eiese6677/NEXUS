@@ -17,6 +17,7 @@
 #include "../ast/FunctionDeclaration.hpp"
 #include "../ast/ReturnStatement.hpp"
 #include "../ast/StringLiteral.hpp"
+#include "../ast/BooleanLiteral.hpp"
 #include <iostream>
 
 namespace nexus::parser
@@ -108,20 +109,26 @@ Parser::ParseStatement()
 std::unique_ptr<nexus::ast::Statement>
 Parser::ParseVariableDeclaration()
 {
-    stream.Consume();              // let 또는 const
+    stream.Consume(); // let 또는 const
 
-    auto name = stream.Consume();  // 변수명
+    auto name = stream.Consume();
 
-    stream.Consume();              // :
+    std::string typeName = "";
 
-    auto type = stream.Consume();  // 타입
+    if (stream.Check(nexus::token::TokenType::Colon))
+    {
+        stream.Consume(); // :
 
-    stream.Consume();              // =
+        auto type = stream.Consume();
+        typeName = type.value;
+    }
+
+    stream.Consume(); // =
 
     auto value = ParseExpression();
 
     return std::make_unique<nexus::ast::VariableDeclaration>(
-        type.value,
+        typeName,
         std::make_unique<nexus::ast::Identifier>(name.value),
         std::move(value)
     );
@@ -183,19 +190,16 @@ Parser::ParsePrimary()
     auto token =
         stream.Consume();
 
-
     using namespace nexus::token;
-
 
     switch(token.type)
     {
-
-        case TokenType::StringLiteral:
-            return std::make_unique<
-                nexus::ast::StringLiteral
-            >(
-                token.value
-            );
+    case TokenType::StringLiteral:
+        return std::make_unique<
+            nexus::ast::StringLiteral
+        >(
+            token.value
+        );
 
     case TokenType::IntegerLiteral:
 
@@ -214,7 +218,13 @@ Parser::ParsePrimary()
             std::stof(token.value)
         );
 
-
+    case TokenType::BooleanLiteral:
+        return std::make_unique<
+            nexus::ast::BooleanLiteral
+        >(
+            token.value == "참"
+        );
+        
     case TokenType::Identifier:
 
         return std::make_unique<

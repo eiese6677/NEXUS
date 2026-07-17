@@ -8,6 +8,7 @@ namespace nexus::vm
 {
 
 using Value = std::variant<
+    std::monostate,
     int64_t,
     double,
     std::string,

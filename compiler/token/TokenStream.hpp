@@ -3,6 +3,7 @@
 #include "Token.hpp"
 
 #include <vector>
+// #include <iostream>
 #include <cstddef>
 
 
@@ -64,6 +65,7 @@ public:
     Token Consume()
     {
         Token token = Current();
+        // std::cout << TokenTypeToString(token.type) << '\n';
 
         Advance();
 

@@ -31,6 +31,14 @@ public:
 
         return symbols.at(name);
     }
+
+    void Update(const std::string& name, Type type)
+    {
+        if (Exists(name))
+        {
+            symbols[name] = type;
+        }
+    }
 };
 
 }

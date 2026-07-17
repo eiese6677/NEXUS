@@ -3,6 +3,8 @@
 #include <iostream>
 #include <stdexcept>
 #include "../ast/BinaryExpression.hpp"
+#include "../ast/StringLiteral.hpp"
+#include "../ast/BooleanLiteral.hpp"
 
 namespace nexus::semantic
 {
@@ -211,6 +213,12 @@ Type SemanticAnalyzer::AnalyzeExpression(nexus::ast::Expression* expr)
     if (dynamic_cast<nexus::ast::FloatLiteral*>(expr))
         return Type::Float;
 
+    if (dynamic_cast<nexus::ast::StringLiteral*>(expr))
+        return Type::String;
+
+    if(dynamic_cast<nexus::ast::BooleanLiteral*>(expr))
+        return Type::Boolean;
+
     if (auto* call = dynamic_cast<nexus::ast::CallExpression*>(expr))
         return AnalyzeCallExpression(call);
 
@@ -219,15 +227,28 @@ Type SemanticAnalyzer::AnalyzeExpression(nexus::ast::Expression* expr)
         Type leftType = AnalyzeExpression(binary->Left());
         Type rightType = AnalyzeExpression(binary->Right());
         std::string op = binary->Operator();
-        if (op == "<" || op == ">" || op == "<=" || op == ">=" || op == "==" || op == "!=")
+        
+        if (leftType == Type::Integer &&
+            rightType == Type::Integer)
         {
-            return Type::Boolean;
+            return Type::Integer;
         }
-        if (leftType == Type::Float || rightType == Type::Float)
+
+        if ((leftType == Type::Integer || leftType == Type::Float) &&
+            (rightType == Type::Integer || rightType == Type::Float))
         {
             return Type::Float;
         }
-        return leftType;
+
+        if (leftType == Type::String &&
+            rightType == Type::String &&
+            op == "+")
+        {
+            return Type::String;
+        }
+
+        return Type::Unknown;
+        // return leftType;
     }
 
     return Type::Unknown;
@@ -265,6 +286,59 @@ Type SemanticAnalyzer::AnalyzeLiteral(nexus::ast::Expression* expr)
 void SemanticAnalyzer::AddDiagnostic(const std::string& message)
 {
     diagnostics.push_back(message);
+}
+
+Type SemanticAnalyzer::InferExpressionType(
+    ast::Expression* expr
+)
+{
+    if(auto* integer =
+        dynamic_cast<ast::IntegerLiteral*>(expr))
+    {
+        return Type::Integer;
+    }
+
+
+    if(auto* floating =
+        dynamic_cast<ast::FloatLiteral*>(expr))
+    {
+        return Type::Float;
+    }
+
+
+    if(auto* str =
+        dynamic_cast<ast::StringLiteral*>(expr))
+    {
+        return Type::String;
+    }
+
+
+    if(auto* binary =
+        dynamic_cast<ast::BinaryExpression*>(expr))
+    {
+        auto left =
+            InferExpressionType(binary->Left());
+
+        auto right =
+            InferExpressionType(binary->Right());
+
+
+        if(left == Type::Float ||
+           right == Type::Float)
+        {
+            return Type::Float;
+        }
+
+
+        if(left == Type::Integer &&
+           right == Type::Integer)
+        {
+            return Type::Integer;
+        }
+    }
+
+
+    return Type::Unknown;
 }
 
 }

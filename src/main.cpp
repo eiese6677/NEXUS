@@ -1,11 +1,11 @@
 #include "../compiler/lexer/Lexer.hpp"
 #include "../compiler/token/TokenStream.hpp"
+#include "../compiler/token/Token.hpp"
 #include "../compiler/parser/Parser.hpp"
 #include "../compiler/semantic/SemanticAnalyzer.hpp"
 #include "../compiler/ir/IRBuilder.hpp"
 #include "../compiler/codegen/CodeGenerator.hpp"
 #include "../vm/VirtualMachine.hpp"
-
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -108,28 +108,38 @@ int main(int argc, char* argv[])
     nexus::ir::IRBuilder builder;
     auto ir = builder.Build(*program);
 
-    // for (const auto& inst : ir.Instructions())
-    // {
-    //     std::cout
-    //         << static_cast<int>(inst.opcode)
-    //         << " ";
-    //     PrintValue_ir(inst.operand);
-    //     std::cout << "\n";
-    // }
-
     // Code Generation
     nexus::codegen::CodeGenerator generator;
     auto bytecode = generator.Generate(ir);
 
+    auto module = builder.Build(*program);
+    
     // 디버그 출력
-    // for (const auto& inst : bytecode.Code())
-    // {
-    //     std::cout
-    //         << static_cast<int>(inst.opcode)
-    //         << " ";
-    //     PrintValue_vm(inst.operand);
-    //     std::cout << "\n";
-    // }
+    for (auto& stmt : program->Statements())
+    {
+        if (stmt)
+            std::cout << typeid(*stmt).name() << "\n";
+        else
+            std::cout << "nullptr\n";
+    }
+
+    for (const auto& instruction : module.Instructions()) {
+        std::cout << "IR [" 
+                << static_cast<int>(instruction.opcode)
+                << "] ";
+        PrintValue_ir(instruction.operand);
+        std::cout << "\n";
+    }
+    for (const auto& inst : bytecode.Code())
+    {
+        std::cout
+            << nexus::vm::OpcodeToString(inst.opcode)
+            << "\t";
+
+        PrintValue_vm(inst.operand);
+
+        std::cout << "\n";
+    }
 
     // Execute
     nexus::vm::VirtualMachine vm;

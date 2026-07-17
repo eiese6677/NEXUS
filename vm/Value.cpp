@@ -75,26 +75,28 @@ bool CompareEqual(const Value& a, const Value& b)
 
 std::string ToString(const Value& value)
 {
-    return std::visit(
-        [](auto&& v) -> std::string
-        {
-            using T = std::decay_t<decltype(v)>;
+    return std::visit([](auto&& v) -> std::string
+    {
+        using T = std::decay_t<decltype(v)>;
 
-            if constexpr (std::is_same_v<T, bool>)
-            {
-                return v ? "true" : "false";
-            }
-            else if constexpr (std::is_same_v<T, std::string>)
-            {
-                return v;
-            }
-            else
-            {
-                return std::to_string(v);
-            }
-        },
-        value
-    );
+        if constexpr (std::is_same_v<T, std::monostate>)
+        {
+            return "<none>";
+        }
+        else if constexpr (std::is_same_v<T, std::string>)
+        {
+            return v;
+        }
+        else if constexpr (std::is_same_v<T, bool>)
+        {
+            return v ? "true" : "false";
+        }
+        else
+        {
+            return std::to_string(v);
+        }
+
+    }, value);
 }
 
 }

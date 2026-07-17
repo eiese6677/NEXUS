@@ -14,6 +14,7 @@
 #include "../ast/BreakStatement.hpp"
 #include "../ast/ContinueStatement.hpp"
 #include "../ast/StringLiteral.hpp"
+#include "../ast/BooleanLiteral.hpp"
 
 #include <string>
 
@@ -169,12 +170,24 @@ void IRBuilder::GenerateExpression(nexus::ast::Expression* expression)
         });
         return;
     }
+
     if (auto* integer = dynamic_cast<nexus::ast::IntegerLiteral*>(expression))
     {
         module.Add({
             Opcode::LoadConstant,
             int64_t(integer->Value())
         });
+        return;
+    }
+
+    if (auto* boolean =
+        dynamic_cast<nexus::ast::BooleanLiteral*>(expression))
+    {
+        module.Add({
+            nexus::ir::Opcode::LoadConstant,
+            boolean->Value()
+        });
+
         return;
     }
 
@@ -226,6 +239,10 @@ void IRBuilder::GenerateExpression(nexus::ast::Expression* expression)
                 nexus::ir::Opcode::Divide,
                 std::monostate{}
             });
+        }
+        else if (op == "<" || op == ">" || op == "<=" || op == ">=" || op == "==" || op == "!=")
+        {
+            module.Add({nexus::ir::Opcode::Compare, op});
         }
 
         return;

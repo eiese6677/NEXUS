@@ -19,6 +19,7 @@ private:
     IRModule module;
     int labelCounter;
     std::vector<std::pair<std::string, std::string>> loopStack;
+    bool inFunction = false;
 
 public:
     IRModule Build(nexus::ast::Program& program);

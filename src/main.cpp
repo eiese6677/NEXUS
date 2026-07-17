@@ -91,10 +91,20 @@ int main(int argc, char* argv[])
 
         if (token.type == nexus::token::TokenType::EndOfFile)
             break;
+
+        // 디버그 출력
+        // std::cout
+        //     << token.value
+        //     << " type="
+        //     << TokenTypeToString(token.type)
+        //     << " id="
+        //     << static_cast<int>(token.type)
+        //     << "\n";
     }
 
     // Parser
     nexus::token::TokenStream stream(tokens);
+
 
     nexus::parser::Parser parser(std::move(stream));
 
@@ -123,23 +133,23 @@ int main(int argc, char* argv[])
     //         std::cout << "nullptr\n";
     // }
 
-    for (const auto& instruction : module.Instructions()) {
-        std::cout << "IR [" 
-                << static_cast<int>(instruction.opcode)
-                << "] ";
-        PrintValue_ir(instruction.operand);
-        std::cout << "\n";
-    }
-    for (const auto& inst : bytecode.Code())
-    {
-        std::cout
-            << nexus::vm::OpcodeToString(inst.opcode)
-            << "\t";
+    // for (const auto& instruction : module.Instructions()) {
+    //     std::cout << "IR [" 
+    //             << static_cast<int>(instruction.opcode)
+    //             << "] ";
+    //     PrintValue_ir(instruction.operand);
+    //     std::cout << "\n";
+    // }
+    // for (const auto& inst : bytecode.Code())
+    // {
+    //     std::cout
+    //         << nexus::vm::OpcodeToString(inst.opcode)
+    //         << "\t";
 
-        PrintValue_vm(inst.operand);
+    //     PrintValue_vm(inst.operand);
 
-        std::cout << "\n";
-    }
+    //     std::cout << "\n";
+    // }
 
     // Execute
     nexus::vm::VirtualMachine vm;

@@ -5,6 +5,7 @@
 #include <variant>
 #include <string>
 #include <cstdint>
+#include <vector>
 
 namespace nexus::ir
 {
@@ -21,6 +22,8 @@ struct Instruction
 {
     nexus::ir::Opcode opcode;
     Constant operand;
+
+    std::vector<std::string> parameters;
 };
 
 }

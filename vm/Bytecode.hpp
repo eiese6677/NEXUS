@@ -6,6 +6,12 @@
 #include <unordered_map>
 #include <iostream>
 
+struct FunctionInfo
+{
+    size_t address;
+    std::vector<std::string> parameters;
+};
+
 namespace nexus::vm
 {
 
@@ -14,30 +20,23 @@ class Bytecode
 private:
 
     std::vector<Instruction> code;
-
-    std::unordered_map<
-        std::string,
-        size_t
-    > functions;
-
+    std::unordered_map<std::string, FunctionInfo> functions;
 
 public:
 
     void AddFunction(
         const std::string& name,
-        size_t address
+        size_t address,
+        const std::vector<std::string>& parameters
     )
     {
-        // std::cout << "register function: "
-        //         << name
-        //         << " -> "
-        //         << address
-        //         << "\n";
-
-        functions[name] = address;
+        functions[name] = {
+            address,
+            parameters
+        };
     }
 
-    size_t GetFunction(
+    const FunctionInfo& GetFunction(
         const std::string& name
     ) const
     {
@@ -64,9 +63,9 @@ public:
     }
     void OffsetFunctions(size_t offset)
     {
-        for(auto& [name, address] : functions)
+        for (auto& [name, function] : functions)
         {
-            address += offset;
+            function.address += offset;
         }
     }
 };

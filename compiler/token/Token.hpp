@@ -90,7 +90,8 @@ inline std::string TokenTypeToString(TokenType type)
 
     case TokenType::EndOfFile:
         return "EOF";
-
+    case TokenType::Comma:
+        return "Comma";
     default:
         return "Unknown";
     }

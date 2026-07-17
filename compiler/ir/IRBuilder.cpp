@@ -16,7 +16,9 @@
 #include "../ast/StringLiteral.hpp"
 #include "../ast/BooleanLiteral.hpp"
 #include "../ast/FunctionDeclaration.hpp"
+#include "../ast/ReturnStatement.hpp"
 
+#include <iostream>
 #include <string>
 
 namespace nexus::ir
@@ -28,10 +30,32 @@ IRModule IRBuilder::Build(nexus::ast::Program& program)
     labelCounter = 0;
     loopStack.clear();
 
+    // 1. 함수 생성
     for (const auto& statement : program.Statements())
     {
-        GenerateStatement(statement.get());
+        if (dynamic_cast<nexus::ast::FunctionDeclaration*>(statement.get()))
+        {
+            GenerateStatement(statement.get());
+        }
     }
+
+
+    // 2. MAIN 시작
+    module.Add({
+        Opcode::Label,
+        "MAIN"
+    });
+
+
+    // 3. 일반 실행 코드 생성
+    for (const auto& statement : program.Statements())
+    {
+        if (!dynamic_cast<nexus::ast::FunctionDeclaration*>(statement.get()))
+        {
+            GenerateStatement(statement.get());
+        }
+    }
+
 
     return std::move(module);
 }
@@ -58,6 +82,22 @@ void IRBuilder::GenerateStatement(nexus::ast::Statement* statement)
     if (auto* fn = dynamic_cast<nexus::ast::FunctionDeclaration*>(statement))
     {
         GenerateFunction(fn);
+        return;
+    }
+
+    if (auto* ret =
+        dynamic_cast<nexus::ast::ReturnStatement*>(statement))
+    {
+        if (ret->Value())
+        {
+            GenerateExpression(ret->Value());
+        }
+
+        module.Add({
+            nexus::ir::Opcode::Return,
+            std::monostate{}
+        });
+
         return;
     }
 
@@ -167,7 +207,7 @@ void IRBuilder::GenerateExpression(nexus::ast::Expression* expression)
 {
     if (!expression)
         return;
-
+    
     if (auto* str =
         dynamic_cast<nexus::ast::StringLiteral*>(expression))
     {
@@ -204,6 +244,21 @@ void IRBuilder::GenerateExpression(nexus::ast::Expression* expression)
             Opcode::LoadConstant,
             floatLit->Value()
         });
+        return;
+    }
+
+    if (auto* call = dynamic_cast<nexus::ast::CallExpression*>(expression))
+    {
+        for (const auto& arg : call->Arguments())
+        {
+            GenerateExpression(arg.get());
+        }
+
+        module.Add({
+            nexus::ir::Opcode::Call,
+            call->Name()
+        });
+
         return;
     }
 
@@ -254,27 +309,56 @@ void IRBuilder::GenerateExpression(nexus::ast::Expression* expression)
 
         return;
     }
-
-    if (auto* call = dynamic_cast<nexus::ast::CallExpression*>(expression))
-    {
-        for (const auto& arg : call->Arguments())
-        {
-            GenerateExpression(arg.get());
-        }
-
-        module.Add({nexus::ir::Opcode::Call, call->Name()});
-    }
 }
 
+// void IRBuilder::GenerateFunction(
+//     nexus::ast::FunctionDeclaration* fn
+// )
+// {
+//     if(fn->Name() == "MAIN")
+//         return;
+
+
+//     size_t address =
+//         module.Instructions().size();
+
+//     std::vector<std::string> parameters;
+
+//     for(const auto& param : fn->Parameters())
+//     {
+//         parameters.push_back(param.name);
+//     }
+
+//     module.AddFunction(
+//         fn->Name(),
+//         address,
+//         parameters
+//     );
+
+//     module.Add({
+//         Opcode::Function,
+//         fn->Name()
+//     });
+
+
+//     GenerateBlock(fn->Body());
+// }
 void IRBuilder::GenerateFunction(
     nexus::ast::FunctionDeclaration* fn
 )
 {
-    size_t address = module.Instructions().size();
+    std::vector<std::string> parameters;
+
+    for(const auto& param : fn->Parameters())
+    {
+        parameters.push_back(param.name);
+    }
+
 
     module.AddFunction(
         fn->Name(),
-        address
+        0,
+        parameters
     );
 
 
@@ -284,13 +368,11 @@ void IRBuilder::GenerateFunction(
     });
 
 
+    inFunction = true;
+
     GenerateBlock(fn->Body());
 
-
-    module.Add({
-        Opcode::Return,
-        ""
-    });
+    inFunction = false;
 }
 
 }

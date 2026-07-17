@@ -60,14 +60,14 @@ nexus::vm::Bytecode CodeGenerator::Generate(
     size_t functionOffset =
         bytecode.Code().size();
 
-    for(const auto& [name,address] : functionAddresses)
+    for (const auto& [name, function] : module.Functions())
     {
         bytecode.AddFunction(
             name,
-            address + functionOffset
+            generatedFunctions[name] + functionOffset,
+            function.parameters
         );
     }
-
 
     for(const auto& inst : functionCode)
     {
@@ -82,9 +82,17 @@ void CodeGenerator::GenerateInstruction(const nexus::ir::Instruction& instructio
     switch (instruction.opcode)
     {
     case nexus::ir::Opcode::Label:
+    {
+        const auto& label =
+            std::get<std::string>(instruction.operand);
+
+        if(label == "MAIN")
         {
-            break;
+            inFunction = false;
         }
+
+        break;
+    }
     case nexus::ir::Opcode::LoadConstant:
         if (inFunction)
         {
@@ -237,6 +245,7 @@ void CodeGenerator::GenerateInstruction(const nexus::ir::Instruction& instructio
         }
         break;
     }
+
     case ir::Opcode::Function:
     {
         currentFunction =
@@ -247,6 +256,9 @@ void CodeGenerator::GenerateInstruction(const nexus::ir::Instruction& instructio
         inFunction = true;
 
         functionStart = functionCode.size();
+
+        generatedFunctions[currentFunction]
+            = functionStart;
 
         break;
     }

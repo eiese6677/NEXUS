@@ -70,10 +70,10 @@ Parser::ParseStatement()
 
     case nexus::token::TokenType::Print:
     {
-        auto expr = ParseCallExpression();
+        auto name = stream.Consume().value;
 
         return std::make_unique<nexus::ast::ExpressionStatement>(
-            std::move(expr)
+            ParseCallExpression(name)
         );
     }
 
@@ -87,8 +87,10 @@ Parser::ParseStatement()
     {
         if (stream.Peek().type == nexus::token::TokenType::LeftParen)
         {
+            auto arg = ParseExpression();
+
             return std::make_unique<nexus::ast::ExpressionStatement>(
-                ParseCallExpression()
+                ParseExpression()
             );
         }
 
@@ -144,31 +146,30 @@ Parser::ParseVariableDeclaration()
 }
 
 std::unique_ptr<nexus::ast::Expression>
-Parser::ParseCallExpression()
+Parser::ParseCallExpression(std::string name)
 {
-    auto function = stream.Consume();
-
-    auto call =
+        auto call =
         std::make_unique<nexus::ast::CallExpression>(
-            function.value
+            name
         );
 
-    // (
-    if (stream.Check(nexus::token::TokenType::LeftParen))
+    // 반드시 (
+    if(!stream.Check(nexus::token::TokenType::LeftParen))
     {
-        stream.Consume();
+        throw std::runtime_error("expected '('");
     }
 
-    while (!stream.Check(nexus::token::TokenType::RightParen) &&
-           !stream.IsEnd())
-    {
-        auto arg = ParseExpression();
+    stream.Consume();
 
-        // std::cout << "arg = " << (arg ? "OK" : "nullptr") << '\n';
+    while(!stream.Check(nexus::token::TokenType::RightParen) &&
+        !stream.IsEnd())
+    {
+
+        auto arg = ParseExpression();
 
         call->AddArgument(std::move(arg));
 
-        if (stream.Check(nexus::token::TokenType::Comma))
+        if(stream.Check(nexus::token::TokenType::Comma))
         {
             stream.Consume();
         }
@@ -178,8 +179,7 @@ Parser::ParseCallExpression()
         }
     }
 
-    // )
-    if (stream.Check(nexus::token::TokenType::RightParen))
+    if(stream.Check(nexus::token::TokenType::RightParen))
     {
         stream.Consume();
     }
@@ -234,14 +234,18 @@ Parser::ParsePrimary()
             token.value == "참"
         );
         
+    
     case TokenType::Identifier:
+    {
+        if(stream.Check(TokenType::LeftParen))
+        {
+            return ParseCallExpression(token.value);
+        }
 
-        return std::make_unique<
-            nexus::ast::Identifier
-        >(
+        return std::make_unique<nexus::ast::Identifier>(
             token.value
         );
-
+    }
 
     case TokenType::LeftParen:
     {
@@ -440,13 +444,25 @@ Parser::ParseFunctionDeclaration()
     {
         stream.Consume();
 
-        while(!stream.Check(nexus::token::TokenType::RightParen) && !stream.IsEnd())
+        while(!stream.Check(nexus::token::TokenType::RightParen) &&
+            !stream.IsEnd())
         {
             auto paramName = stream.Consume();
-            stream.Consume();
-            auto paramType = stream.Consume();
 
-            parameters.push_back({paramName.value, paramType.value});
+            std::string paramType = "";
+
+            if(stream.Check(nexus::token::TokenType::Colon))
+            {
+                stream.Consume();
+
+                auto type = stream.Consume();
+                paramType = type.value;
+            }
+
+            parameters.push_back({
+                paramName.value,
+                paramType
+            });
 
             if(stream.Check(nexus::token::TokenType::Comma))
             {

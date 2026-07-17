@@ -9,11 +9,17 @@
 namespace nexus::ir
 {
 
+struct FunctionInfo
+{
+    size_t address;
+    std::vector<std::string> parameters;
+};
+
 class IRModule
 {
     private:
     std::vector<Instruction> instructions;
-    std::unordered_map<std::string, size_t> functions;
+    std::unordered_map<std::string, FunctionInfo> functions;
 
 public:
     void Add(Instruction instruction)
@@ -28,17 +34,19 @@ public:
 
     void AddFunction(
         const std::string& name,
-        size_t address
+        size_t address,
+        const std::vector<std::string>& parameters = {}
     )
     {
-        functions[name] = address;
+        functions[name] = {
+            address,
+            parameters
+        };
     }
 
-    size_t GetFunction(
-        const std::string& name
-    ) const
+    const auto& Functions() const
     {
-        return functions.at(name);
+        return functions;
     }
 };
 

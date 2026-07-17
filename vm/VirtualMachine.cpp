@@ -21,47 +21,80 @@ double ToNumber(const nexus::vm::Value& v)
     throw std::runtime_error("not a number");
 }
 
+void PrintValue(const nexus::vm::Value& value)
+{
+    std::visit(
+        [](auto&& arg)
+        {
+            using T = std::decay_t<decltype(arg)>;
+
+            if constexpr (
+                std::is_same_v<T, std::monostate>
+            )
+            {
+                std::cout << "none";
+            }
+            else if constexpr (
+                std::is_same_v<T, bool>
+            )
+            {
+                std::cout
+                    << (arg ? "true" : "false");
+            }
+            else
+            {
+                std::cout << arg;
+            }
+
+            std::cout << "\n";
+        },
+        value
+    );
+}
+
 namespace nexus::vm
 {
 
 void VirtualMachine::Execute(const Bytecode& bytecode)
 {
     stack.clear();
-    variables.clear();
+    globals.clear();
     callStack.clear();
 
     const auto& code = bytecode.Code();
     size_t pc = 0;
-
-    // std::cout 
-    //     << "function count: "
-    //     << bytecode.Functions().size()
-    //     << "\n";
     
     while (pc < code.size())
     {
         const auto& instruction = code[pc];
-
+        
         switch (instruction.opcode)
         {
         case nexus::vm::Opcode::PUSH:
             stack.push_back(instruction.operand);
             break;
 
-        case nexus::vm::Opcode::LOAD:
+        case Opcode::LOAD:
         {
-            if (!variables.contains(std::get<std::string>(instruction.operand)))
-                throw std::runtime_error("undefined variable: " + std::get<std::string>(instruction.operand));
-            stack.push_back(variables[std::get<std::string>(instruction.operand)]);
+            std::string name =
+                std::get<std::string>(instruction.operand);
+
+            stack.push_back(
+                LoadVariable(name)
+            );
+
             break;
         }
-
-        case nexus::vm::Opcode::STORE:
+        case Opcode::STORE:
         {
-            if (stack.empty())
-                throw std::runtime_error("stack underflow on STORE");
-            variables[std::get<std::string>(instruction.operand)] = stack.back();
+            std::string name =
+                std::get<std::string>(instruction.operand);
+
+            auto value = stack.back();
             stack.pop_back();
+
+            StoreVariable(name, value);
+
             break;
         }
 
@@ -127,58 +160,73 @@ void VirtualMachine::Execute(const Bytecode& bytecode)
 
         case Opcode::CALL:
         {
-            auto name =
-            std::get<std::string>(
-                instruction.operand
-            );
+            std::string name =
+            std::get<std::string>(instruction.operand);
             
-            // std::cout
-            //     << "CALL "
-            //     << name
-            //     << " from "
-            //     << pc
-            //     << "\n";
-
             if(name == "출력")
             {
                 auto value = stack.back();
                 stack.pop_back();
 
-                std::cout << ToString(value) << "\n";
+                PrintValue(value);
+
                 break;
             }
 
+            auto& function = bytecode.GetFunction(name);
 
-            if(bytecode.Functions().contains(name))
+
+            CallFrame frame;
+
+            frame.functionName = name;
+            frame.returnAddress = pc + 1;
+
+
+            for (int i = function.parameters.size() - 1;
+                i >= 0;
+                i--)
             {
-                callStack.push_back(pc + 1);
+                frame.locals[
+                    function.parameters[i]
+                ] = stack.back();
 
-                pc = bytecode.GetFunction(name);
-
-                continue;
+                stack.pop_back();
             }
 
-            throw std::runtime_error(
-                "undefined function: " + name
-            );
+            // std::cout
+            //     << "STACK SIZE="
+            //     << stack.size()
+            //     << "\n";
+
+            // for(auto& [k,v] : frame.locals)
+            // {
+            //     std::cout << k << "\n";
+            // }
+
+            callStack.push_back(frame);
+
+
+            pc = function.address;
+
+            continue;
         }
 
         case Opcode::RET:
         {
-            // std::cout 
-            //     << "RET pc="
-            //     << pc
-            //     << " return="
-            //     << callStack.back()
-            //     << "\n";
-            
-            if(callStack.empty())
-                throw std::runtime_error(
-                    "call stack underflow"
-                );
+            if (callStack.empty())
+            {
+                return;
+            }
 
-            pc = callStack.back();
+
+            size_t returnAddress =
+                callStack.back().returnAddress;
+
+
             callStack.pop_back();
+
+
+            pc = returnAddress;
 
             continue;
         }
@@ -318,6 +366,54 @@ void VirtualMachine::Execute(const Bytecode& bytecode)
 
         pc++;
     }
+}
+
+Value VirtualMachine::LoadVariable(
+    const std::string& name
+)
+{
+    if (!callStack.empty())
+    {
+        auto& locals = callStack.back().locals;
+
+        auto it = locals.find(name);
+
+        if (it != locals.end())
+        {
+            return it->second;
+        }
+    }
+
+
+    auto it = globals.find(name);
+
+    if (it != globals.end())
+    {
+        return it->second;
+    }
+
+    throw std::runtime_error(
+        "Undefined variable: " + name
+    );
+}
+
+void VirtualMachine::StoreVariable(
+    const std::string& name,
+    const Value& value
+)
+{
+    if (!callStack.empty())
+    {
+        auto& locals = callStack.back().locals;
+
+        if (locals.contains(name))
+        {
+            locals[name] = value;
+            return;
+        }
+    }
+
+    globals[name] = value;
 }
 
 }

@@ -315,6 +315,10 @@ nexus::token::Token Lexer::NextToken()
                 ":"
             );
         }
+    case ',':
+        result = nexus::token::Token{nexus::token::TokenType::Comma,",", startLine, startColumn};
+        advanceCodePoint();
+        break;
     case '\0':
         result = nexus::token::Token{nexus::token::TokenType::EndOfFile,"", startLine, startColumn};
         break;

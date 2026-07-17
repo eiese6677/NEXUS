@@ -45,7 +45,7 @@ private:
     ParseExpression();
 
     std::unique_ptr<nexus::ast::Expression>
-    ParseCallExpression();
+    ParseCallExpression(std::string name);
 
     std::unique_ptr<nexus::ast::Expression>
     ParsePrimary();

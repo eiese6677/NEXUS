@@ -8,6 +8,7 @@
 #include "../ast/Statement.hpp"
 #include "../ast/Expression.hpp"
 #include "../ast/BlockStatement.hpp"
+#include "../ast/FunctionDeclaration.hpp"
 
 namespace nexus::ir
 {
@@ -27,6 +28,9 @@ private:
     void GenerateExpression(nexus::ast::Expression* expression);
     void GenerateBlock(nexus::ast::BlockStatement* block);
     std::string NextLabel();
+    void GenerateFunction(
+        nexus::ast::FunctionDeclaration* fn
+    );
 };
 
 }

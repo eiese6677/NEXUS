@@ -84,7 +84,16 @@ Parser::ParseStatement()
         return ParseWhileStatement();
 
     case nexus::token::TokenType::Identifier:
+    {
+        if (stream.Peek().type == nexus::token::TokenType::LeftParen)
+        {
+            return std::make_unique<nexus::ast::ExpressionStatement>(
+                ParseCallExpression()
+            );
+        }
+
         return ParseAssignmentStatement();
+    }
 
     case nexus::token::TokenType::Break:
         return ParseBreakStatement();

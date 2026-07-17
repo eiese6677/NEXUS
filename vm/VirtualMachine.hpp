@@ -15,6 +15,7 @@ class VirtualMachine
 private:
     std::vector<Value> stack;
     std::unordered_map<std::string, Value> variables;
+    std::vector<size_t> callStack;
 
 public:
     void Execute(const Bytecode& bytecode);

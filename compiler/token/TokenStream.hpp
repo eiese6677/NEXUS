@@ -72,7 +72,6 @@ public:
         return token;
     }
 
-
     // 끝인지 확인
     bool IsEnd() const
     {

@@ -19,7 +19,11 @@ enum class Opcode
     JumpIfFalse,
     Compare,
     Label,
-    HALT
+    HALT,
+    
+    Function,
+    EndFunction,
+    Return
 };
 
 }

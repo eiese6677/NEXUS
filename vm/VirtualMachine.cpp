@@ -26,19 +26,21 @@ namespace nexus::vm
 
 void VirtualMachine::Execute(const Bytecode& bytecode)
 {
+    stack.clear();
+    variables.clear();
+    callStack.clear();
+
     const auto& code = bytecode.Code();
     size_t pc = 0;
+
+    // std::cout 
+    //     << "function count: "
+    //     << bytecode.Functions().size()
+    //     << "\n";
     
     while (pc < code.size())
     {
         const auto& instruction = code[pc];
-        
-        // std::cout
-        //     << "PC="
-        //     << pc
-        //     << " OPCODE="
-        //     << static_cast<int>(instruction.opcode)
-        //     << "\n";
 
         switch (instruction.opcode)
         {
@@ -123,34 +125,63 @@ void VirtualMachine::Execute(const Bytecode& bytecode)
             break;
         }
 
-        case nexus::vm::Opcode::CALL:
-            if (std::get<std::string>(instruction.operand) == "출력")
+        case Opcode::CALL:
+        {
+            auto name =
+            std::get<std::string>(
+                instruction.operand
+            );
+            
+            // std::cout
+            //     << "CALL "
+            //     << name
+            //     << " from "
+            //     << pc
+            //     << "\n";
+
+            if(name == "출력")
             {
-                if (stack.empty())
-                    throw std::runtime_error("stack underflow on CALL 출력");
-                
-                    std::visit([](const auto& value)
-                    {
-                        using T = std::decay_t<decltype(value)>;
-
-                        if constexpr (std::is_same_v<T, std::monostate>)
-                        {
-                            std::cout << "null";
-                        }
-                        else
-                        {
-                            std::cout << value;
-                        }
-                    }, stack.back());
-                std::cout << '\n';
-
+                auto value = stack.back();
                 stack.pop_back();
+
+                std::cout << ToString(value) << "\n";
+                break;
             }
-            else
+
+
+            if(bytecode.Functions().contains(name))
             {
-                std::cout << "[CALL] " << std::get<std::string>(instruction.operand) << "\n";
+                callStack.push_back(pc + 1);
+
+                pc = bytecode.GetFunction(name);
+
+                continue;
             }
-            break;
+
+            throw std::runtime_error(
+                "undefined function: " + name
+            );
+        }
+
+        case Opcode::RET:
+        {
+            // std::cout 
+            //     << "RET pc="
+            //     << pc
+            //     << " return="
+            //     << callStack.back()
+            //     << "\n";
+            
+            if(callStack.empty())
+                throw std::runtime_error(
+                    "call stack underflow"
+                );
+
+            pc = callStack.back();
+            callStack.pop_back();
+
+            continue;
+        }
 
         case nexus::vm::Opcode::JMP:
             pc = static_cast<size_t>(std::get<int64_t>(instruction.operand));

@@ -15,6 +15,7 @@
 #include "../ast/ContinueStatement.hpp"
 #include "../ast/StringLiteral.hpp"
 #include "../ast/BooleanLiteral.hpp"
+#include "../ast/FunctionDeclaration.hpp"
 
 #include <string>
 
@@ -51,6 +52,12 @@ void IRBuilder::GenerateStatement(nexus::ast::Statement* statement)
     {
         GenerateExpression(assign->Value());
         module.Add({nexus::ir::Opcode::Store, assign->TargetName()});
+        return;
+    }
+
+    if (auto* fn = dynamic_cast<nexus::ast::FunctionDeclaration*>(statement))
+    {
+        GenerateFunction(fn);
         return;
     }
 
@@ -257,6 +264,33 @@ void IRBuilder::GenerateExpression(nexus::ast::Expression* expression)
 
         module.Add({nexus::ir::Opcode::Call, call->Name()});
     }
+}
+
+void IRBuilder::GenerateFunction(
+    nexus::ast::FunctionDeclaration* fn
+)
+{
+    size_t address = module.Instructions().size();
+
+    module.AddFunction(
+        fn->Name(),
+        address
+    );
+
+
+    module.Add({
+        Opcode::Function,
+        fn->Name()
+    });
+
+
+    GenerateBlock(fn->Body());
+
+
+    module.Add({
+        Opcode::Return,
+        ""
+    });
 }
 
 }

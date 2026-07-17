@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
     nexus::codegen::CodeGenerator generator;
     auto bytecode = generator.Generate(ir);
 
-    auto module = builder.Build(*program);
+    auto module = ir;
     
     // 디버그 출력
     // for (auto& stmt : program->Statements())

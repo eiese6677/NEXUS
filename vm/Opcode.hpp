@@ -25,7 +25,8 @@ enum class Opcode
     GE,
     EQ,
     NE,
-    HALT
+    HALT,
+    RET,
 };
 
 
@@ -71,6 +72,8 @@ inline std::string OpcodeToString(Opcode opcode)
             return "STORE";
         case Opcode::SUB:
             return "SUB";
+        case Opcode::RET:
+            return "RET";
     }
 
     return "UNKNOWN";

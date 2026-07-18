@@ -120,9 +120,17 @@ Parser::ParseStatement()
 std::unique_ptr<nexus::ast::Statement>
 Parser::ParseVariableDeclaration()
 {
-    stream.Consume(); // let 또는 const
+    auto keyword = stream.Consume(); // let 또는 const
 
-    auto name = stream.Consume();
+    bool isConst =
+        keyword.type == nexus::token::TokenType::Const;
+
+    auto nameToken = stream.Consume();
+
+    auto identifier =
+        std::make_unique<nexus::ast::Identifier>(
+            nameToken.value
+        );
 
     std::string typeName = "";
 
@@ -139,8 +147,9 @@ Parser::ParseVariableDeclaration()
     auto value = ParseExpression();
 
     return std::make_unique<nexus::ast::VariableDeclaration>(
+        isConst,
         typeName,
-        std::make_unique<nexus::ast::Identifier>(name.value),
+        std::move(identifier),
         std::move(value)
     );
 }

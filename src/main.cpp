@@ -114,6 +114,16 @@ int main(int argc, char* argv[])
     nexus::semantic::SemanticAnalyzer analyzer;
     analyzer.Analyze(*program);
 
+    for (const auto& error : analyzer.Diagnostics())
+    {
+        std::cerr << error << '\n';
+    }
+
+    if (!analyzer.Diagnostics().empty())
+    {
+        return 1;
+    }
+    
     // IR
     nexus::ir::IRBuilder builder;
     auto ir = builder.Build(*program);

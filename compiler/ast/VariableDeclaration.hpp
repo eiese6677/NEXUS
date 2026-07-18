@@ -6,14 +6,13 @@
 
 #include <memory>
 
-
 namespace nexus::ast
 {
 
 class VariableDeclaration : public Statement
 {
-
 private:
+    bool isConst;
 
     std::string typeName;
 
@@ -21,22 +20,25 @@ private:
 
     std::unique_ptr<Expression> value;
 
-
 public:
-
     VariableDeclaration(
+        bool isConst,
         const std::string& typeName,
         std::unique_ptr<Identifier> name,
         std::unique_ptr<Expression> value
     )
         :
+        isConst(isConst),
         typeName(typeName),
         name(std::move(name)),
         value(std::move(value))
     {
     }
 
-
+    bool IsConst() const
+    {
+        return isConst;
+    }
 
     const std::string& TypeName() const
     {
@@ -55,8 +57,8 @@ public:
 
     std::string ToString() const override
     {
-        return 
-            "VariableDeclaration(" +
+        return
+            std::string(isConst ? "ConstDeclaration(" : "VariableDeclaration(") +
             typeName +
             " " +
             name->ToString() +
@@ -64,7 +66,6 @@ public:
             value->ToString() +
             ")";
     }
-
 };
 
 }

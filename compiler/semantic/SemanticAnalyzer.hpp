@@ -49,7 +49,7 @@ private:
     void AnalyzeBlock(nexus::ast::BlockStatement* block);
 
     Type AnalyzeExpression(nexus::ast::Expression* expr);
-    Type AnalyzeIdentifier(nexus::ast::Identifier* expr);
+    Symbol AnalyzeIdentifier(nexus::ast::Identifier* expr);
     Type AnalyzeCallExpression(nexus::ast::CallExpression* expr);
     Type AnalyzeLiteral(nexus::ast::Expression* expr);
     Type InferExpressionType(ast::Expression* expr);

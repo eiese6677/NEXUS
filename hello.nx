@@ -1,8 +1,8 @@
-함수 더하기(a,b)
+func add(a: int, b: int)
 {
-    반환 a+b
+    return a + b
 }
 
-let a = 더하기(10,20)
+let a: int = add(10,20)
 
 출력(a)

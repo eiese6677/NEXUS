@@ -9,10 +9,21 @@
 namespace nexus::semantic
 {
 
+static Type ConvertType(const std::string& name)
+{
+    if (name == "정수" || name == "int") return Type::Int;
+    if (name == "실수" || name == "float") return Type::Float;
+    if (name == "문자열" || name == "String") return Type::String;
+    if (name == "불린" || name == "bool") return Type::Bool;
+
+    return Type::Unknown;
+}
+
 void SemanticAnalyzer::Analyze(nexus::ast::Program& program)
 {
     diagnostics.clear();
-    symbols = SymbolTable();
+    symbols.Clear();
+    symbols.PushScope();   // Global
 
     for (const auto& stmt : program.Statements())
     {
@@ -80,41 +91,70 @@ void SemanticAnalyzer::AnalyzeVariableDeclaration(nexus::ast::VariableDeclaratio
     }
 
     Type declared = Type::Unknown;
-    if (stmt->TypeName() == "정수") declared = Type::Integer;
+    if (stmt->TypeName() == "정수") declared = Type::Int;
     else if (stmt->TypeName() == "실수") declared = Type::Float;
-    else if (stmt->TypeName() == "불린") declared = Type::Boolean;
+    else if (stmt->TypeName() == "불린") declared = Type::Bool;
     else if (stmt->TypeName() == "문자열") declared = Type::String;
 
     Type inferred = AnalyzeExpression(stmt->Value());
     if (declared != Type::Unknown && inferred != Type::Unknown && declared != inferred)
     {
-        if (!(declared == Type::Float && inferred == Type::Integer))
+        if (!(declared == Type::Float && inferred == Type::Int))
         {
             AddDiagnostic("Error: type mismatch in declaration of '" + name + "'");
         }
     }
-    symbols.Define(name, declared != Type::Unknown ? declared : inferred);
+    Type finalType =
+        declared != Type::Unknown
+            ? declared
+            : inferred;
+
+    symbols.Define(
+        name,
+        finalType,
+        stmt->IsConst()
+    );
 }
 
 void SemanticAnalyzer::AnalyzeAssignmentStatement(nexus::ast::AssignmentStatement* stmt)
 {
+    
     if (!stmt)
-        return;
-
+    return;
+    
     const std::string name = stmt->TargetName();
+    
     if (!symbols.Exists(name))
     {
-        AddDiagnostic("Error: undefined variable '" + name + "'");
+        AddDiagnostic(
+            "Error: undefined variable '" + name + "'"
+        );
         return;
     }
 
-    Type varType = symbols.Get(name);
-    Type valType = AnalyzeExpression(stmt->Value());
-    if (varType != Type::Unknown && valType != Type::Unknown && varType != valType)
+    Symbol symbol = symbols.Get(name);
+
+    if (symbol.isConst)
     {
-        if (!(varType == Type::Float && valType == Type::Integer))
+        AddDiagnostic(
+            "Error: cannot assign to const variable '" + name + "'"
+        );
+        return;
+    }
+
+    Type varType = symbol.type;
+    Type valType = AnalyzeExpression(stmt->Value());
+
+    if (varType != Type::Unknown &&
+        valType != Type::Unknown &&
+        varType != valType)
+    {
+        if (!(varType == Type::Float &&
+            valType == Type::Int))
         {
-            AddDiagnostic("Error: type mismatch in assignment to '" + name + "'");
+            AddDiagnostic(
+                "Error: type mismatch in assignment to '" + name + "'"
+            );
         }
     }
 }
@@ -133,7 +173,7 @@ void SemanticAnalyzer::AnalyzeIfStatement(nexus::ast::IfStatement* stmt)
         return;
 
     Type condType = AnalyzeExpression(stmt->Condition());
-    if (condType != Type::Boolean && condType != Type::Unknown)
+    if (condType != Type::Bool && condType != Type::Unknown)
     {
         AddDiagnostic("Error: condition must be boolean");
     }
@@ -142,7 +182,7 @@ void SemanticAnalyzer::AnalyzeIfStatement(nexus::ast::IfStatement* stmt)
     for (const auto& elif : stmt->Elifs())
     {
         Type elifCondType = AnalyzeExpression(elif.condition.get());
-        if (elifCondType != Type::Boolean && elifCondType != Type::Unknown)
+        if (elifCondType != Type::Bool && elifCondType != Type::Unknown)
         {
             AddDiagnostic("Error: condition must be boolean");
         }
@@ -161,7 +201,7 @@ void SemanticAnalyzer::AnalyzeWhileStatement(nexus::ast::WhileStatement* stmt)
         return;
 
     Type condType = AnalyzeExpression(stmt->Condition());
-    if (condType != Type::Boolean && condType != Type::Unknown)
+    if (condType != Type::Bool && condType != Type::Unknown)
     {
         AddDiagnostic("Error: condition must be boolean");
     }
@@ -172,9 +212,20 @@ void SemanticAnalyzer::AnalyzeFunctionDeclaration(nexus::ast::FunctionDeclaratio
 {
     if (!stmt)
         return;
+        
+    symbols.PushScope();
 
-    symbols.Define(stmt->Name(), Type::Unknown);
+    for (const auto& param : stmt->Parameters())
+    {
+        symbols.Define(
+            param.name,
+            ConvertType(param.typeName)
+        );
+    }
+
     AnalyzeBlock(stmt->Body());
+
+    symbols.PopScope();
 }
 
 void SemanticAnalyzer::AnalyzeReturnStatement(nexus::ast::ReturnStatement* stmt)
@@ -193,10 +244,14 @@ void SemanticAnalyzer::AnalyzeBlock(nexus::ast::BlockStatement* block)
     if (!block)
         return;
 
+    symbols.PushScope();
+    
     for (const auto& stmt : block->Statements())
     {
         AnalyzeStatement(stmt.get());
     }
+
+    symbols.PopScope();
 }
 
 Type SemanticAnalyzer::AnalyzeExpression(nexus::ast::Expression* expr)
@@ -205,10 +260,10 @@ Type SemanticAnalyzer::AnalyzeExpression(nexus::ast::Expression* expr)
         return Type::Unknown;
 
     if (auto* id = dynamic_cast<nexus::ast::Identifier*>(expr))
-        return AnalyzeIdentifier(id);
+        return AnalyzeIdentifier(id).type;
 
     if (dynamic_cast<nexus::ast::IntegerLiteral*>(expr))
-        return Type::Integer;
+        return Type::Int;
 
     if (dynamic_cast<nexus::ast::FloatLiteral*>(expr))
         return Type::Float;
@@ -217,53 +272,97 @@ Type SemanticAnalyzer::AnalyzeExpression(nexus::ast::Expression* expr)
         return Type::String;
 
     if(dynamic_cast<nexus::ast::BooleanLiteral*>(expr))
-        return Type::Boolean;
+        return Type::Bool;
 
     if (auto* call = dynamic_cast<nexus::ast::CallExpression*>(expr))
         return AnalyzeCallExpression(call);
 
-    if (auto* binary = dynamic_cast<nexus::ast::BinaryExpression*>(expr))
+    if (auto* binary =
+    dynamic_cast<nexus::ast::BinaryExpression*>(expr))
     {
-        Type leftType = AnalyzeExpression(binary->Left());
-        Type rightType = AnalyzeExpression(binary->Right());
-        std::string op = binary->Operator();
-        
-        if (leftType == Type::Integer &&
-            rightType == Type::Integer)
+        Type leftType =
+            AnalyzeExpression(binary->Left());
+
+        Type rightType =
+            AnalyzeExpression(binary->Right());
+
+        const std::string op =
+            binary->Operator();
+
+        // 비교 연산
+        if (op == "<" ||
+            op == ">" ||
+            op == "<=" ||
+            op == ">=" ||
+            op == "==" ||
+            op == "!=")
         {
-            return Type::Integer;
+            if (leftType == rightType ||
+                ((leftType == Type::Int || leftType == Type::Float) &&
+                (rightType == Type::Int || rightType == Type::Float)))
+            {
+                return Type::Bool;
+            }
+
+            AddDiagnostic(
+                "Error: invalid comparison"
+            );
+            return Type::Unknown;
         }
 
-        if ((leftType == Type::Integer || leftType == Type::Float) &&
-            (rightType == Type::Integer || rightType == Type::Float))
+        // 문자열 연결
+        if (op == "+")
         {
-            return Type::Float;
+            if (leftType == Type::String &&
+                rightType == Type::String)
+            {
+                return Type::String;
+            }
         }
 
-        if (leftType == Type::String &&
-            rightType == Type::String &&
-            op == "+")
+        // 숫자 연산
+        if ((leftType == Type::Int ||
+            leftType == Type::Float) &&
+            (rightType == Type::Int ||
+            rightType == Type::Float))
         {
-            return Type::String;
+            if (leftType == Type::Float ||
+                rightType == Type::Float)
+            {
+                return Type::Float;
+            }
+
+            return Type::Int;
         }
+
+        AddDiagnostic(
+            "Error: invalid operands for operator '" + op + "'"
+        );
 
         return Type::Unknown;
-        // return leftType;
     }
 
     return Type::Unknown;
 }
 
-Type SemanticAnalyzer::AnalyzeIdentifier(nexus::ast::Identifier* expr)
+Symbol SemanticAnalyzer::AnalyzeIdentifier(
+    nexus::ast::Identifier* expr
+)
 {
     if (!expr)
-        return Type::Unknown;
+    {
+        return {};
+    }
 
-    const std::string name = expr->Name();
+    const std::string& name = expr->Name();
+
     if (!symbols.Exists(name))
     {
-        AddDiagnostic("Error: undefined variable '" + name + "'");
-        return Type::Unknown;
+        AddDiagnostic(
+            "Error: undefined variable '" + name + "'"
+        );
+
+        return {};
     }
 
     return symbols.Get(name);
@@ -295,7 +394,7 @@ Type SemanticAnalyzer::InferExpressionType(
     if(auto* integer =
         dynamic_cast<ast::IntegerLiteral*>(expr))
     {
-        return Type::Integer;
+        return Type::Int;
     }
 
 
@@ -330,10 +429,10 @@ Type SemanticAnalyzer::InferExpressionType(
         }
 
 
-        if(left == Type::Integer &&
-           right == Type::Integer)
+        if(left == Type::Int &&
+           right == Type::Int)
         {
-            return Type::Integer;
+            return Type::Int;
         }
     }
 
